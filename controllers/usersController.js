@@ -11,9 +11,8 @@ const usersController = {
             resObj.error = 'loginRepeat'
         }
         else {
-            usersData.create(user)
-            const userNew = usersData.read({ login: user.login, password: user.password })[0]
-            resObj.id = userNew.id
+            resObj.user = usersData.create(user)
+            delete resObj.user.password
         }
         res.json(resObj)
     },
@@ -24,10 +23,11 @@ const usersController = {
         }
         const user = usersData.read({ login: req.body.login, password: req.body.password })[0]
         if (!user) {
-            resObj.error = 'invalidData'
+            resObj.error = 'notFound'
         }
         else {
-            resObj.id = user.id
+            resObj.user = user
+            delete resObj.user.password
         }
         res.json(resObj)
     },
@@ -40,9 +40,9 @@ const usersController = {
     patchUser(req, res) {
         if (req.body.login)
             req.body.login = req.body.login.trim()
-        if(req.body.password)
+        if (req.body.password)
             req.body.password = req.body.password.trim()
-        if(req.body.oldPassword)
+        if (req.body.oldPassword)
             req.body.oldPassword = req.body.oldPassword.trim()
 
         const id = req.params.id
