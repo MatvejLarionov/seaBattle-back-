@@ -33,17 +33,17 @@ const usersController = {
     authorization(req, res) {
         req.body.login = req.body.login.trim()
         req.body.password = req.body.password.trim()
-        const resObj = {
+        if (!req.body.login || !req.body.password) {
+            res.json({ error: "emptyFields" })
+            return
         }
         const user = usersData.read({ login: req.body.login, password: req.body.password })[0]
         if (!user) {
-            resObj.error = 'notFound'
+            res.json({ error: 'notFound' })
+            return
         }
-        else {
-            resObj.user = user
-            delete resObj.user.password
-        }
-        res.json(resObj)
+        delete user.password
+        res.json(user)
     },
     getUser(req, res) {
         const id = req.params.id
