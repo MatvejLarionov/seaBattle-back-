@@ -1,20 +1,34 @@
 const usersData = require("../data/usersData")
 
+const isCorrectPassword = (password) => {
+    if (password.length < 8)
+        return false
+    if (!password.split("").find(item =>
+        item.charCodeAt(0) < "0".charCodeAt(0) ||
+        item.charCodeAt(0) > "9".charCodeAt(0)))
+        return false
+    return true
+}
 const usersController = {
     registration(req, res) {
         req.body.login = req.body.login.trim()
         req.body.password = req.body.password.trim()
-        const resObj = {
-        }
         const user = req.body
+        if (!user.login || !user.password) {
+            res.json({ error: "emptyFields" })
+            return
+        }
         if (usersData.isLoginRepeat(user.login)) {
-            resObj.error = 'loginRepeat'
+            res.json({ error: "loginRepeat" })
+            return
         }
-        else {
-            resObj.user = usersData.create(user)
-            delete resObj.user.password
+        if (!isCorrectPassword(user.password)) {
+            res.json({ error: "passwordIsNotCorrect" })
+            return
         }
-        res.json(resObj)
+        const newUser = usersData.create(user)
+        delete newUser.password
+        res.json(newUser)
     },
     authorization(req, res) {
         req.body.login = req.body.login.trim()
