@@ -1,6 +1,7 @@
-const usersData = require("../data/usersData")
-
-const isCorrectPassword = (password) => {
+import usersData from "../data/usersData"
+import { Request, Response } from 'express';
+import { User } from "../types/user";
+const isCorrectPassword = (password: string): boolean => {
     if (password.length < 8)
         return false
     if (!password.split("").find(item =>
@@ -10,10 +11,10 @@ const isCorrectPassword = (password) => {
     return true
 }
 const usersController = {
-    registration(req, res) {
+    registration(req: Request<{}, {}, User>, res: Response) {
         req.body.login = req.body.login.trim()
-        req.body.password = req.body.password.trim()
-        const user = req.body
+        req.body.password = req.body.password!.trim()
+        const user: User = req.body
         if (!user.login || !user.password) {
             res.json({ error: "emptyFields" })
             return
@@ -30,9 +31,9 @@ const usersController = {
         delete newUser.password
         res.json(newUser)
     },
-    authorization(req, res) {
+    authorization(req: Request<{}, {}, User>, res: Response) {
         req.body.login = req.body.login.trim()
-        req.body.password = req.body.password.trim()
+        req.body.password = req.body.password!.trim()
         if (!req.body.login || !req.body.password) {
             res.json({ error: "emptyFields" })
             return
@@ -45,23 +46,28 @@ const usersController = {
         delete user.password
         res.json(user)
     },
-    getUser(req, res) {
+    getUser(req: Request<{ id: string }, {}, User>, res: Response) {
         const id = req.params.id
         const user = usersData.getUserById(id)
+        if (!user) {
+            res.json({ error: "notFound" })
+            return
+        }
         delete user.password
         res.json(user)
     },
-    patchUser(req, res) {
-        if (req.body.login)
-            req.body.login = req.body.login.trim()
-        if (req.body.password)
-            req.body.password = req.body.password.trim()
-        if (req.body.oldPassword)
-            req.body.oldPassword = req.body.oldPassword.trim()
+    // patchUser(req: Request<{}, {}, { login: string, password: string }>, res: Response) {
+    //     if (req.body.login)
+    //         req.body.login = req.body.login.trim()
+    //     if (req.body.password)
+    //         req.body.password = req.body.password.trim()
+    //     if (req.body.oldPassword)
+    //         req.body.oldPassword = req.body.oldPassword.trim()
 
-        const id = req.params.id
-        const error = usersData.update(id, req.body)
-        res.json({ error: error })
-    }
+    //     const id = req.params.id
+    //     const error = usersData.update(id, req.body)
+    //     res.json({ error: error })
+    // }
 }
-module.exports = usersController
+
+export default usersController

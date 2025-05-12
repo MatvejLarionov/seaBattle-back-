@@ -1,102 +1,103 @@
 //в квадратных скобках стоит boolean т.е заполнен ли файл или нет. Файл заполнен если в нем 10 юзеров
-const fs = require('fs')
-const path = require('path')
-const encryptString = require('../utils/encryptString')
+import fs from 'fs'
+import path from 'path'
+import encryptString from '../utils/encryptString'
+import { User } from '../types/user'
 const pathJsons = './data/usersJsons'
 const fileManager = {
     directory: pathJsons,
-    getFileList() {
+    getFileList(): string[] {
         return fs.readdirSync(this.directory).sort()
     },
-    getFilesQuantity() {
+    getFilesQuantity(): number {
         return this.getFileList().length
     },
-    getFileNumList() {
+    getFileNumList(): number[] {
         return this.getFileList().map(item => Number(item[0]))
     },
-    getFileName(num) {
+    getFileName(num: number): string {
         return this.getFileList()[num]
     },
-    getFilePath(num) {
+    getFilePath(num: number): string {
         return path.join(this.directory, this.getFileName(num))
     },
-    getFilePathByFileName(fileName) {
+    getFilePathByFileName(fileName: string): string {
         return path.join(this.directory, fileName)
     },
 
-    getData(num) {
+    getData(num: number): any {
         return JSON.parse(fs.readFileSync(this.getFilePath(num), "utf8"))
     },
-    setData(num, data) {
+    setData(num: number, data: any): void {
         fs.writeFileSync(this.getFilePath(num), JSON.stringify(data), "utf8")
     },
 
-    getDataByFileName(fileName) {
+    getDataByFileName(fileName: string): any {
         return JSON.parse(fs.readFileSync(this.getFilePathByFileName(fileName), "utf8"))
     },
-    setDataByFileName(fileName, data) {
+    setDataByFileName(fileName: string, data: any): void {
         fs.writeFileSync(this.getFilePathByFileName(fileName), JSON.stringify(data))
     },
 
-    getAllData() {
-        let data = []
+    getAllData(): any[] {
+        let data: any[] = []
         this.getFileList().forEach(item => {
             data = data.concat(this.getDataByFileName(item))
         })
         return data
     },
 
-    createNewFile(data = "") {
+    createNewFile(data: any): void {
         const num = this.getFilesQuantity()
         const pathName = this.getFilePathByFileName(`${num}-1.json`)
         fs.writeFileSync(pathName, JSON.stringify(data))
     },
 
-    lockFile(num) {
+    lockFile(num: number): void {
         const oldPath = this.getFilePath(num)
         const newPath = this.getFilePathByFileName(`${num}-0.json`)
         fs.renameSync(oldPath, newPath)
     },
-    unlockFile(num) {
+    unlockFile(num: number): void {
         const oldPath = this.getFilePath(num)
         const newPath = this.getFilePathByFileName(`${num}-1.json`)
         fs.renameSync(oldPath, newPath)
     },
-    isUnLockFile(num) {
+    isUnLockFile(num: number): boolean {
         const fileName = this.getFileName(num)
-        return fileName.split("-").at(-1)[0] == 1
+        return fileName.split("-").at(-1)?.at(0) === "1"
     }
 }
 const usersData = {
     limitInFile: 10,
-    create(user) {
-        const nums = fileManager.getFileNumList()
-        const unfullFile = nums.find(item => fileManager.isUnLockFile(item))
+    create(user: User): User {
+        const nums: number[] = fileManager.getFileNumList()
+        const unfullFile: number | undefined = nums.find(item => fileManager.isUnLockFile(item))
         if (unfullFile !== undefined) {
-            const data = fileManager.getData(unfullFile)
-            let i = 0
+            const data: User[] = fileManager.getData(unfullFile)
+            let i: number = 0
             for (; i < data.length - 1; i++) {
-                if (data[i + 1].id - data[i].id > 1)
+                if (Number(data[i + 1].id) - Number(data[i].id) > 1)
                     break
             }
-            user.id = data[i].id + 1
-            const index = user.id % this.limitInFile
+            user.id = Number(data[i].id) + 1
+            const index: number = user.id % this.limitInFile
             data.splice(index, 0, user)
             fileManager.setData(unfullFile, data)
             if (data.length >= this.limitInFile) {
                 fileManager.lockFile(unfullFile)
             }
-            user.id = encryptString(user.id)
+            user.id = encryptString(user.id.toString())
             return user
         } else {
             user.id = nums.length * this.limitInFile
             fileManager.createNewFile([user])
-            user.id = encryptString(user.id)
+            user.id = encryptString(user.id.toString())
             return user
         }
     },
-    read(filterParams) {
-        const data = fileManager.getAllData().map(item => {
+    read(filterParams?: { login?: string, password?: string, id?: string }): User[] {
+        const data: User[] = fileManager.getAllData().map(item => {
             item.id = encryptString(item.id)
             return item
         })
@@ -104,7 +105,7 @@ const usersData = {
         if (filterParams) {
             return data.filter(item => {
                 for (let i in filterParams) {
-                    if (filterParams[i] !== item[i].toString())
+                    if (filterParams[i as keyof User] !== item[i as keyof User])
                         return false
                 }
                 return true
@@ -113,25 +114,30 @@ const usersData = {
         return data
     },
 
-    isLoginRepeat(login) {
+    isLoginRepeat(login: string): boolean {
         return JSON.stringify(usersData.read({ login: login })) !== '[]'
     },
 
-    getUserIdByEncryptString(str) {
+    getUserIdByEncryptString(str: string): number {
         const id = fileManager.getFilesQuantity() * this.limitInFile
         for (let i = 0; i <= id; i++) {
-            if (encryptString(i) === str) {
+            if (encryptString(i.toString()) === str) {
                 return i
             }
         }
+        return -1
     },
 
-    getUserById(id) {
-        id = this.getUserIdByEncryptString(id)
+    getUserById(id: number | string): User | undefined {
+        id = this.getUserIdByEncryptString(id.toString())
+        if (id === -1)
+            return
         const fileNum = Math.floor(id / this.limitInFile)
-        const data = fileManager.getData(fileNum)
+        const data: User[] = fileManager.getData(fileNum)
         const user = data.find(item => item.id === id)
-        user.id = encryptString(user.id)
+        if (!user)
+            return
+        user.id = encryptString(user.id.toString())
         return user
     },
 
@@ -164,4 +170,4 @@ const usersData = {
     // // }
 }
 
-module.exports = usersData
+export default usersData
