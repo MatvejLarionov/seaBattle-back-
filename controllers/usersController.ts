@@ -1,6 +1,7 @@
 import usersData from "../data/usersData"
 import { Request, Response } from 'express';
 import { User } from "../types/user";
+import { ServerErrors } from "../types/enums";
 const isCorrectPassword = (password: string): boolean => {
     if (password.length < 8)
         return false
@@ -16,15 +17,15 @@ const usersController = {
         req.body.password = req.body.password!.trim()
         const user: User = req.body
         if (!user.login || !user.password) {
-            res.json({ error: "emptyFields" })
+            res.json({ error: ServerErrors.emptyFields })
             return
         }
         if (usersData.isLoginRepeat(user.login)) {
-            res.json({ error: "loginRepeat" })
+            res.json({ error: ServerErrors.loginRepeat })
             return
         }
         if (!isCorrectPassword(user.password)) {
-            res.json({ error: "passwordIsNotCorrect" })
+            res.json({ error: ServerErrors.passwordIsNotCorrect })
             return
         }
         const newUser = usersData.create(user)
@@ -35,12 +36,12 @@ const usersController = {
         req.body.login = req.body.login.trim()
         req.body.password = req.body.password!.trim()
         if (!req.body.login || !req.body.password) {
-            res.json({ error: "emptyFields" })
+            res.json({ error: ServerErrors.emptyFields })
             return
         }
         const user = usersData.read({ login: req.body.login, password: req.body.password })[0]
         if (!user) {
-            res.json({ error: 'notFound' })
+            res.json({ error: ServerErrors.notFound })
             return
         }
         delete user.password
@@ -50,7 +51,7 @@ const usersController = {
         const id = req.params.id
         const user = usersData.getUserById(id)
         if (!user) {
-            res.json({ error: "notFound" })
+            res.json({ error: ServerErrors.notFound })
             return
         }
         delete user.password
