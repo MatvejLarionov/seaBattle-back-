@@ -3,9 +3,9 @@ import fs from 'fs'
 import path from 'path'
 import encryptString from '../utils/encryptString'
 import { User } from '../types/user'
-const pathJsons = './data/usersJsons'
+
 const fileManager = {
-    directory: pathJsons,
+    directory: './data/usersJsons',
     getFileList(): string[] {
         return fs.readdirSync(this.directory).sort()
     },
@@ -68,9 +68,25 @@ const fileManager = {
         return fileName.split("-").at(-1)?.at(0) === "1"
     }
 }
+const createUserForClient = (user: User, isRemovalPassword = true): User => {
+    const newUser: User = {
+        login: user.login,
+        password: isRemovalPassword ? undefined : user.password,
+        avatar: "http://localhost:3000" + user.avatar,
+        id: encryptString(user.id.toString())
+    }
+    return newUser
+}
 const usersData = {
     limitInFile: 10,
+    defaultPathAvatar: "/usersAvatars/defaultAvatar.jpg",
+
     create(user: User): User {
+
+        if (!user.avatar) {
+            user.avatar = this.defaultPathAvatar
+        }
+
         const nums: number[] = fileManager.getFileNumList()
         const unfullFile: number | undefined = nums.find(item => fileManager.isUnLockFile(item))
         if (unfullFile !== undefined) {
@@ -87,20 +103,15 @@ const usersData = {
             if (data.length >= this.limitInFile) {
                 fileManager.lockFile(unfullFile)
             }
-            user.id = encryptString(user.id.toString())
-            return user
+            return createUserForClient(user)
         } else {
             user.id = nums.length * this.limitInFile
             fileManager.createNewFile([user])
-            user.id = encryptString(user.id.toString())
-            return user
+            return createUserForClient(user)
         }
     },
-    read(filterParams?: { login?: string, password?: string, id?: string }): User[] {
-        const data: User[] = fileManager.getAllData().map(item => {
-            item.id = encryptString(item.id)
-            return item
-        })
+    read(filterParams?: { login?: string, password?: string, id?: string, avatar?: string }): User[] {
+        const data: User[] = fileManager.getAllData().map(item => createUserForClient(item, false))
 
         if (filterParams) {
             return data.filter(item => {
@@ -137,8 +148,7 @@ const usersData = {
         const user = data.find(item => item.id === id)
         if (!user)
             return
-        user.id = encryptString(user.id.toString())
-        return user
+        return createUserForClient(user)
     },
 
     // update(id, newData) {

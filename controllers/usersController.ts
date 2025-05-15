@@ -29,7 +29,6 @@ const usersController = {
             return
         }
         const newUser = usersData.create(user)
-        delete newUser.password
         res.json(newUser)
     },
     authorization(req: Request<{}, {}, User>, res: Response) {
@@ -54,7 +53,6 @@ const usersController = {
             res.json({ error: ServerErrors.notFound })
             return
         }
-        delete user.password
         res.json(user)
     },
     // patchUser(req: Request<{}, {}, { login: string, password: string }>, res: Response) {
