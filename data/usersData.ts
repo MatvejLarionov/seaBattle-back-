@@ -2,7 +2,7 @@
 import fs from 'fs'
 import path from 'path'
 import encryptString from '../utils/encryptString'
-import { User } from '../types/user'
+import { User, UserDataForRegistration } from '../types/user'
 
 const fileManager = {
     directory: './data/usersJsons',
@@ -68,10 +68,10 @@ const fileManager = {
         return fileName.split("-").at(-1)?.at(0) === "1"
     }
 }
-const createUserForClient = (user: User, isRemovalPassword = true): User => {
+const convertUserOut = (user: User): User => {
     const newUser: User = {
         login: user.login,
-        password: isRemovalPassword ? undefined : user.password,
+        password: user.password,
         avatar: "http://localhost:3000" + user.avatar,
         id: encryptString(user.id.toString())
     }
@@ -81,12 +81,14 @@ const usersData = {
     limitInFile: 10,
     defaultPathAvatar: "/usersAvatars/defaultAvatar.jpg",
 
-    create(user: User): User {
+    create(userData: UserDataForRegistration): User {
 
-        if (!user.avatar) {
-            user.avatar = this.defaultPathAvatar
+        const user: User = {
+            login: userData.login,
+            password: userData.password,
+            avatar: this.defaultPathAvatar,
+            id: ""
         }
-
         const nums: number[] = fileManager.getFileNumList()
         const unfullFile: number | undefined = nums.find(item => fileManager.isUnLockFile(item))
         if (unfullFile !== undefined) {
@@ -103,15 +105,15 @@ const usersData = {
             if (data.length >= this.limitInFile) {
                 fileManager.lockFile(unfullFile)
             }
-            return createUserForClient(user)
+            return convertUserOut(user)
         } else {
             user.id = nums.length * this.limitInFile
             fileManager.createNewFile([user])
-            return createUserForClient(user)
+            return convertUserOut(user)
         }
     },
     read(filterParams?: { login?: string, password?: string, id?: string, avatar?: string }): User[] {
-        const data: User[] = fileManager.getAllData().map(item => createUserForClient(item, false))
+        const data: User[] = fileManager.getAllData().map(item => convertUserOut(item))
 
         if (filterParams) {
             return data.filter(item => {
@@ -148,26 +150,22 @@ const usersData = {
         const user = data.find(item => item.id === id)
         if (!user)
             return
-        return createUserForClient(user)
+        return convertUserOut(user)
     },
 
-    // update(id, newData) {
-    //     id = this.getUserIdByEncryptString(id)
-    //     const fileNum = Math.floor(id / this.limitInFile)
-    //     const data = fileManager.getData(fileNum)
-    //     const index = data.findIndex(item => item.id == id)
-    //     if (index === -1)
-    //         return "error";
-    //     if (data[index].password !== newData.oldPassword)
-    //         return "passwordNotFound"
-    //     if (this.isLoginRepeat(newData.login))
-    //         return "loginRepeat"
-    //     delete newData.oldPassword
-    //     for (const key in newData) {
-    //         data[index][key] = newData[key]
-    //     }
-    //     fileManager.setData(fileNum, data)
-    // },
+    setUser(id: string | number, newUser: User) {
+        id = this.getUserIdByEncryptString(id.toString())
+        const fileNum = Math.floor(id / this.limitInFile)
+        const data: User[] = fileManager.getData(fileNum)
+        const index = data.findIndex(item => item.id == id)
+        data[index] = {
+            login: newUser.login,
+            password: newUser.password,
+            avatar: newUser.avatar.split("http://localhost:3000")[1],
+            id: data[index].id
+        }
+        fileManager.setData(fileNum, data)
+    },
     // // delete(id) {
     // //     id = Number(id)
     // //     const pathFile = path.join(pathJsons, `data(${Math.floor(id / 10)}).json`)
