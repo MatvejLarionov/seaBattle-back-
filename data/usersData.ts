@@ -3,6 +3,7 @@ import fs from 'fs'
 import path from 'path'
 import encryptString from '../utils/encryptString'
 import { User, UserDataForRegistration } from '../types/user'
+import serverConfig from '../serverConfig'
 
 const fileManager = {
     directory: './data/usersJsons',
@@ -72,7 +73,7 @@ const convertUserOut = (user: User): User => {
     const newUser: User = {
         login: user.login,
         password: user.password,
-        avatar: "http://localhost:3000" + user.avatar,
+        avatar: serverConfig.url + user.avatar,
         id: encryptString(user.id.toString())
     }
     return newUser
@@ -161,7 +162,7 @@ const usersData = {
         data[index] = {
             login: newUser.login,
             password: newUser.password,
-            avatar: newUser.avatar.split("http://localhost:3000")[1],
+            avatar: newUser.avatar.split(serverConfig.url)[1],
             id: data[index].id
         }
         fileManager.setData(fileNum, data)
