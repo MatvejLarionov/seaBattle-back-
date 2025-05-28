@@ -4,3 +4,12 @@ export enum ServerErrors{
   loginRepeat,
   passwordIsNotCorrect
 }
+
+export enum GameStage{
+  connecting
+}
+
+export enum Status{
+  connected,
+  disconnected
+}
