@@ -108,12 +108,35 @@ const socketRouter = (socket: GamingSocket) => {
     socket.on("disconnect", (reason) => {
         arrGamers.delete(gamer)
     })
+    socket.on("requestToJoin", (partnerLogin: string) => {
+        const partner: Gamer | undefined = arrGamers.find(item => item.login === partnerLogin)
+        if (!partner || partner.login === gamer.login) {
+            socket.emit("notFound")
+            return
+        }
+        gamer.setPartner(partner)
+        partner.socket.emit("requestToJoin", gamer.login)
+    })
+    socket.on("acceptToJoin", () => {
+        if (!gamer.partner)
+            return
+        socket.emit("acceptToJoin", gamer.partner.toUser())
+        gamer.partner.socket.emit("acceptToJoin", gamer.toUser())
+    })
+    socket.on("rejectToJoin", () => {
+        if (!gamer.partner)
+            return
+        gamer.partner.socket.emit("rejectToJoin")
+        gamer.partner.deletePartner()
+    })
 }
+
 // setInterval(() => {
 //     arrGamers.find(((item, index) => {
-//         console.log(`${index} : ${item.login}`)
+//         console.log(`${index} login : ${item.login} partnerLogin : ${item.partner?.login}`)
 //         return false
 //     }))
 //     console.log("-------------")
 // }, 1000)
+
 export default socketRouter

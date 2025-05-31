@@ -4,7 +4,7 @@ import { User } from "./user";
 type GamingSocket = Socket<
   {
     authorization: (userId: string) => void
-    
+
     requestToJoin: (partnerLogin: string) => void
     acceptToJoin: () => void
     rejectToJoin: () => void
@@ -13,6 +13,7 @@ type GamingSocket = Socket<
     requestToJoin: (partnerLogin: string) => void
     acceptToJoin: (partner: User) => void
     rejectToJoin: () => void
+    notFound: () => void
   }
 >
 
