@@ -11,6 +11,7 @@ export default class Gamer {
     private _gameStage: GameStage,
     private _socket: GamingSocket,
     private _partner?: Gamer,
+    private _timeoutIdForDeleteGamer?: NodeJS.Timeout
   ) { }
   get login(): string {
     return this._login
@@ -47,6 +48,12 @@ export default class Gamer {
   }
   get partner(): Gamer | undefined {
     return this._partner
+  }
+  get timeoutIdForDeleteGamer(): NodeJS.Timeout | undefined {
+    return this._timeoutIdForDeleteGamer
+  }
+  set timeoutIdForDeleteGamer(value: NodeJS.Timeout | undefined) {
+    this._timeoutIdForDeleteGamer = value
   }
   setPartner(partner: Gamer) {
     this._partner = partner

@@ -6,7 +6,8 @@ export enum ServerErrors{
 }
 
 export enum GameStage{
-  connecting
+  connecting,
+  preparingForGame
 }
 
 export enum Status{

@@ -95,6 +95,16 @@ const socketRouter = (socket: GamingSocket) => {
         const tempGamer: Gamer | undefined = arrGamers.find((item) => item.id === userId)
         if (tempGamer) {
             gamer = tempGamer
+            gamer.socket = socket
+            gamer.status = Status.connected
+            if (gamer.timeoutIdForDeleteGamer) {
+                clearTimeout(gamer.timeoutIdForDeleteGamer)
+            }
+            socket.emit("setGameStage", gamer.gameStage)
+            if (gamer.partner) {
+                socket.emit("setPartner", gamer.partner.toUser())
+                gamer.partner.socket.emit("setPartnerStatus", gamer.status)
+            }
             return
         }
 
@@ -106,7 +116,20 @@ const socketRouter = (socket: GamingSocket) => {
         arrGamers.push(gamer)
     })
     socket.on("disconnect", (reason) => {
-        arrGamers.delete(gamer)
+        if (!gamer)
+            return
+        if (!gamer.partner) {
+            arrGamers.delete(gamer)
+            return
+        }
+        gamer.status = Status.disconnected
+        gamer.partner.socket.emit("setPartnerStatus", gamer.status)
+        gamer.timeoutIdForDeleteGamer = setTimeout(() => {
+            gamer.partner?.socket.emit("deletePartner")
+            gamer.partner!.gameStage = GameStage.connecting
+            gamer.partner?.socket.emit("setGameStage", gamer.partner.gameStage)
+            gamer.deletePartner()
+        }, 4000)
     })
     socket.on("requestToJoin", (partnerLogin: string) => {
         const partner: Gamer | undefined = arrGamers.find(item => item.login === partnerLogin)
@@ -120,8 +143,13 @@ const socketRouter = (socket: GamingSocket) => {
     socket.on("acceptToJoin", () => {
         if (!gamer.partner)
             return
-        socket.emit("acceptToJoin", gamer.partner.toUser())
-        gamer.partner.socket.emit("acceptToJoin", gamer.toUser())
+        socket.emit("setPartner", gamer.partner.toUser())
+        gamer.partner.socket.emit("setPartner", gamer.toUser())
+
+        gamer.gameStage = gamer.partner.gameStage = GameStage.preparingForGame
+
+        socket.emit("setGameStage", gamer.gameStage)
+        gamer.partner.socket.emit("setGameStage", gamer.partner.gameStage)
     })
     socket.on("rejectToJoin", () => {
         if (!gamer.partner)
@@ -131,12 +159,12 @@ const socketRouter = (socket: GamingSocket) => {
     })
 }
 
-// setInterval(() => {
-//     arrGamers.find(((item, index) => {
-//         console.log(`${index} login : ${item.login} partnerLogin : ${item.partner?.login}`)
-//         return false
-//     }))
-//     console.log("-------------")
-// }, 1000)
+setInterval(() => {
+    arrGamers.find(((item, index) => {
+        console.log(`${index} login : ${item.login}       partnerLogin : ${item.partner?.login}`)
+        return false
+    }))
+    console.log("-------------")
+}, 1000)
 
 export default socketRouter
