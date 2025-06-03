@@ -8,6 +8,7 @@ type GamingSocket = Socket<
     requestToJoin: (partnerLogin: string) => void
     acceptToJoin: () => void
     rejectToJoin: () => void
+    deletePartner: () => void
   },
   {
     requestToJoin: (partnerLogin: string) => void

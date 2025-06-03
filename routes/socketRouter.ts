@@ -147,6 +147,10 @@ const socketRouter = (socket: GamingSocket) => {
         gamer.partner.socket.emit("rejectToJoin")
         gamer.partner.setPartner(null)
     })
+    socket.on("deletePartner", () => {
+        gamer.syncGameStage(GameStage.connecting)
+        gamer.syncPartner(null)
+    })
 }
 
 setInterval(() => {
