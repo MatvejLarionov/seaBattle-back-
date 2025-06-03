@@ -96,15 +96,12 @@ const socketRouter = (socket: GamingSocket) => {
         if (tempGamer) {
             gamer = tempGamer
             gamer.socket = socket
-            gamer.status = Status.connected
             if (gamer.timeoutIdForDeleteGamer) {
                 clearTimeout(gamer.timeoutIdForDeleteGamer)
             }
-            socket.emit("setGameStage", gamer.gameStage)
-            if (gamer.partner) {
-                socket.emit("setPartner", gamer.partner.toUser())
-                gamer.partner.socket.emit("setPartnerStatus", gamer.status)
-            }
+            gamer.syncStatus(Status.connected)
+            gamer.syncGameStage()
+            gamer.syncPartner(gamer.partner || null, false)
             return
         }
 
@@ -122,14 +119,12 @@ const socketRouter = (socket: GamingSocket) => {
             arrGamers.delete(gamer)
             return
         }
-        gamer.status = Status.disconnected
-        gamer.partner.socket.emit("setPartnerStatus", gamer.status)
+        gamer.syncStatus(Status.disconnected)
         gamer.timeoutIdForDeleteGamer = setTimeout(() => {
-            gamer.partner?.socket.emit("deletePartner")
-            gamer.partner!.gameStage = GameStage.connecting
-            gamer.partner?.socket.emit("setGameStage", gamer.partner.gameStage)
-            gamer.deletePartner()
-        }, 4000)
+            gamer.partner?.syncGameStage(GameStage.connecting)
+            gamer.partner?.syncPartner(null)
+            arrGamers.delete(gamer)
+        }, 10000)
     })
     socket.on("requestToJoin", (partnerLogin: string) => {
         const partner: Gamer | undefined = arrGamers.find(item => item.login === partnerLogin)
@@ -143,19 +138,14 @@ const socketRouter = (socket: GamingSocket) => {
     socket.on("acceptToJoin", () => {
         if (!gamer.partner)
             return
-        socket.emit("setPartner", gamer.partner.toUser())
-        gamer.partner.socket.emit("setPartner", gamer.toUser())
-
-        gamer.gameStage = gamer.partner.gameStage = GameStage.preparingForGame
-
-        socket.emit("setGameStage", gamer.gameStage)
-        gamer.partner.socket.emit("setGameStage", gamer.partner.gameStage)
+        gamer.syncPartner()
+        gamer.syncGameStage(GameStage.preparingForGame)
     })
     socket.on("rejectToJoin", () => {
         if (!gamer.partner)
             return
         gamer.partner.socket.emit("rejectToJoin")
-        gamer.partner.deletePartner()
+        gamer.partner.setPartner(null)
     })
 }
 

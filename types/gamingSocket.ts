@@ -1,6 +1,5 @@
 import { Socket } from "socket.io";
-import { User } from "./user";
-import { GameStage, Status } from "./enums";
+import GamerForClient from "./gamerForClient";
 
 type GamingSocket = Socket<
   {
@@ -15,11 +14,8 @@ type GamingSocket = Socket<
     rejectToJoin: () => void
     notFound: () => void
 
-    setPartner: (partner: User) => void
-    deletePartner: () => void
-
-    setGameStage: (gameStage: GameStage) => void
-    setPartnerStatus: (status: Status) => void
+    setGamer: (gamer: GamerForClient) => void
+    setPartner: (partner: GamerForClient | null) => void
   }
 >
 
