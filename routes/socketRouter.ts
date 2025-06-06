@@ -142,14 +142,7 @@ const socketRouter = (socket: GamingSocket) => {
         if (!gamer.partner)
             return
         gamer.syncPartner()
-        //gamer.syncGameStage(GameStage.preparingForGame)
-        gamer.syncGameStage(GameStage.fillingInField)
-        gamer.initFields()
-        gamer.syncField()
-        // gamer.field.setShip(new Ship(3), new Point(3, 3))
-        // gamer.field.setShip(new Ship(4), new Point(6, 6))
-        // gamer.syncFieldChanges(gamer.field.field, false)
-
+        gamer.syncGameStage(GameStage.preparingForGame)
     })
     socket.on("rejectToJoin", () => {
         if (!gamer.partner)
