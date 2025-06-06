@@ -1,3 +1,6 @@
+import { Cell, Field } from "../game/Field";
+import Point from "../game/Point";
+import Ship from "../game/Ship";
 import { GameStage, Status } from "./enums";
 import GamerForClient from "./gamerForClient";
 import GamingSocket from "./gamingSocket";
@@ -12,6 +15,10 @@ export default class Gamer {
   private _socket: GamingSocket
   private _partner: Gamer | null
   private _timeoutIdForDeleteGamer?: NodeJS.Timeout
+
+  private _field: Field
+  private _partnerField: Field
+
   constructor(
     login: string,
     avatar: string,
@@ -30,6 +37,9 @@ export default class Gamer {
     this._socket = socket
     this._partner = partner || null
     this._timeoutIdForDeleteGamer = timeoutIdForDeleteGamer
+
+    this._field = new Field()
+    this._partnerField = new Field()
   }
   get login(): string {
     return this._login
@@ -85,6 +95,39 @@ export default class Gamer {
     this._partner = partner
     partner._partner = this
   }
+
+  get field(): Field {
+    return this._field
+  }
+  get partnerField(): Field {
+    return this._partnerField
+  }
+  private createField(): Field {
+    const field = new Field(10, 10)
+    const arrShipSize = [4, 3, 3, 2, 2, 2, 1, 1, 1, 1]
+    const point = new Point()
+    arrShipSize.forEach(shipSize => {
+      const ship = new Ship(shipSize)
+      for (const i in field.field) {
+        point.setIndex(Number(i), field.n)
+        if (field.canSetShip(ship, point)) {
+          field.setShip(ship, point)
+          return
+        }
+      }
+    })
+    return field
+  }
+  initFields() {
+    const fieldSize = 10
+    this._field = this.createField()
+    this._partnerField = new Field(fieldSize, fieldSize)
+    if (this.partner) {
+      this.partner._field = this.createField()
+      this.partner._partnerField = new Field(fieldSize, fieldSize)
+    }
+  }
+
   toUser(): User {
     return { login: this.login, avatar: this.avatar, id: "" }
   }
@@ -136,6 +179,25 @@ export default class Gamer {
 
     if (this.partner && isSyncWithPartner) {
       this.partner.socket.emit("setPartner", this.toGamerForClient())
+    }
+  }
+  syncField(isSyncWithPartner: boolean = true) {
+    this.socket.emit("initField", this.field.n, this.field.m)
+    this.syncFieldChanges(this.field.field, false)
+    if (this.partner && isSyncWithPartner) {
+      this.partner.socket.emit("initField", this.partner.field.n, this.partner.field.m)
+      this.partner.syncFieldChanges(this.partner.field.field, false)
+    }
+  }
+
+  syncFieldChanges(fieldChanges: { [key: number]: Cell }, isSyncWithPartner: boolean = true) {
+    this.socket.emit("setOnField", fieldChanges)
+    if (this.partner) {
+      const temp = Object.values(fieldChanges).map((item: Cell) =>
+        item === Cell.ship ? Cell.empty : item)
+      this.partner._partnerField = this.partner.partnerField.getNewField(temp)
+      if (isSyncWithPartner)
+        this.partner.socket.emit("setOnPartnerField", temp)
     }
   }
 }

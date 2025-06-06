@@ -1,5 +1,6 @@
 import { Socket } from "socket.io";
 import GamerForClient from "./gamerForClient";
+import { Cell } from "../game/Field";
 
 type GamingSocket = Socket<
   {
@@ -9,6 +10,9 @@ type GamingSocket = Socket<
     acceptToJoin: () => void
     rejectToJoin: () => void
     deletePartner: () => void
+
+    movShip: (oldIndex: number, newIndex: number) => void
+    turnClockwiseShip: (index: number) => void
   },
   {
     requestToJoin: (partnerLogin: string) => void
@@ -17,6 +21,11 @@ type GamingSocket = Socket<
 
     setGamer: (gamer: GamerForClient) => void
     setPartner: (partner: GamerForClient | null) => void
+
+    initField: (n: number, m: number) => void
+    setOnField: (field: { [key: number]: Cell }) => void
+    setOnPartnerField: (field: { [key: number]: Cell }) => void
+    fieldChangeIsCompleted: () => void
   }
 >
 

@@ -7,7 +7,8 @@ export enum ServerErrors{
 
 export enum GameStage{
   connecting,
-  preparingForGame
+  preparingForGame,
+  fillingInField
 }
 
 export enum Status{

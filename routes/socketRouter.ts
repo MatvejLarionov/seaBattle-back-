@@ -1,4 +1,5 @@
 import usersData from "../data/usersData"
+import Point from "../game/Point"
 import ArrayGamers from "../types/arrayGamers"
 import { GameStage, Status } from "../types/enums"
 import Gamer from "../types/gamer"
@@ -102,6 +103,8 @@ const socketRouter = (socket: GamingSocket) => {
             gamer.syncStatus(Status.connected)
             gamer.syncGameStage()
             gamer.syncPartner(gamer.partner || null, false)
+            if (gamer.gameStage === GameStage.fillingInField)
+                gamer.syncField()
             return
         }
 
@@ -139,7 +142,14 @@ const socketRouter = (socket: GamingSocket) => {
         if (!gamer.partner)
             return
         gamer.syncPartner()
-        gamer.syncGameStage(GameStage.preparingForGame)
+        //gamer.syncGameStage(GameStage.preparingForGame)
+        gamer.syncGameStage(GameStage.fillingInField)
+        gamer.initFields()
+        gamer.syncField()
+        // gamer.field.setShip(new Ship(3), new Point(3, 3))
+        // gamer.field.setShip(new Ship(4), new Point(6, 6))
+        // gamer.syncFieldChanges(gamer.field.field, false)
+
     })
     socket.on("rejectToJoin", () => {
         if (!gamer.partner)
@@ -151,14 +161,44 @@ const socketRouter = (socket: GamingSocket) => {
         gamer.syncGameStage(GameStage.connecting)
         gamer.syncPartner(null)
     })
+    socket.on("movShip", (oldIndex: number, newIndex: number) => {
+        if (!gamer)
+            return
+        if (gamer.gameStage !== GameStage.fillingInField)
+            return
+        const oldPoint = new Point()
+        oldPoint.setIndex(oldIndex, gamer.field.n)
+        const newPoint = new Point()
+        newPoint.setIndex(newIndex, gamer.field.n)
+        if (gamer.field.canMovShip(oldPoint, newPoint)) {
+            const change = gamer.field.movShip(oldPoint, newPoint)
+            if (change) {
+                gamer.syncFieldChanges(change, false)
+            }
+        }
+        socket.emit("fieldChangeIsCompleted")
+    })
+    socket.on("turnClockwiseShip", (index) => {
+        if (!gamer)
+            return
+        if (gamer.gameStage !== GameStage.fillingInField)
+            return
+        const point = new Point()
+        point.setIndex(index, gamer.field.n)
+        if (gamer.field.canTurn_clockwise(point)) {
+            const change = gamer.field.turn_clockwise(point)
+            if (change)
+                gamer.syncFieldChanges(change, false)
+        }
+    })
 }
 
-setInterval(() => {
-    arrGamers.find(((item, index) => {
-        console.log(`${index} login : ${item.login}       partnerLogin : ${item.partner?.login}`)
-        return false
-    }))
-    console.log("-------------")
-}, 1000)
+// setInterval(() => {
+//     arrGamers.find(((item, index) => {
+//         console.log(`${index} login : ${item.login}       partnerLogin : ${item.partner?.login}`)
+//         return false
+//     }))
+//     console.log("-------------")
+// }, 1000)
 
 export default socketRouter
