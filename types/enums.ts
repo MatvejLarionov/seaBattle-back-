@@ -13,5 +13,6 @@ export enum GameStage{
 
 export enum Status{
   connected,
-  disconnected
+  disconnected,
+  readyToPlay
 }

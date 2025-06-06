@@ -183,10 +183,10 @@ export default class Gamer {
   }
   syncField(isSyncWithPartner: boolean = true) {
     this.socket.emit("initField", this.field.n, this.field.m)
-    this.syncFieldChanges(this.field.field, false)
+    this.syncFieldChanges(this.field.field)
     if (this.partner && isSyncWithPartner) {
       this.partner.socket.emit("initField", this.partner.field.n, this.partner.field.m)
-      this.partner.syncFieldChanges(this.partner.field.field, false)
+      this.partner.syncFieldChanges(this.partner.field.field)
     }
   }
 

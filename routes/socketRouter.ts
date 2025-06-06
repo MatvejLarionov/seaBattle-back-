@@ -150,6 +150,16 @@ const socketRouter = (socket: GamingSocket) => {
         gamer.partner.socket.emit("rejectToJoin")
         gamer.partner.setPartner(null)
     })
+    socket.on("setGameReady", (value: boolean) => {
+        if (value && gamer.partner?.status === Status.readyToPlay) {
+            gamer.syncGameStage(GameStage.fillingInField)
+            gamer.initFields()
+            gamer.syncField()
+            gamer.partner.syncStatus(Status.connected)
+        } else {
+            gamer.syncStatus(value ? Status.readyToPlay : Status.connected)
+        }
+    })
     socket.on("deletePartner", () => {
         gamer.syncGameStage(GameStage.connecting)
         gamer.syncPartner(null)
