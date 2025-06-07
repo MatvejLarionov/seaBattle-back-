@@ -9,7 +9,8 @@ export enum GameStage{
   connecting,
   preparingForGame,
   fillingInField,
-  battle
+  battle,
+  endGame
 }
 
 export enum Status{

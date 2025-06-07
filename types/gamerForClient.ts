@@ -5,5 +5,8 @@ export default interface GamerForClient {
   avatar?: string,
   status?: Status,
   gameStage?: GameStage,
-  isStep?: boolean
+  isStep?: boolean,
+  numberOfHits?: number,
+  numberOfMisses?: number,
+  isWinner?: boolean
 }

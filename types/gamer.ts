@@ -19,7 +19,11 @@ export default class Gamer {
   private _field: Field
   private _partnerField: Field
   private _isStep: boolean
+  private _numberOfHits: number
+  private _numberOfMisses: number
+  private _isWinner: boolean
 
+  static arrShipSize = [4, 3, 3, 2, 2, 2, 1, 1, 1, 1]
   constructor(
     login: string,
     avatar: string,
@@ -42,6 +46,10 @@ export default class Gamer {
     this._field = new Field()
     this._partnerField = new Field()
     this._isStep = false
+    this._numberOfHits = 0
+    this._numberOfMisses = 0
+    this._isWinner = false
+
   }
   get login(): string {
     return this._login
@@ -85,6 +93,24 @@ export default class Gamer {
   set timeoutIdForDeleteGamer(value: NodeJS.Timeout | undefined) {
     this._timeoutIdForDeleteGamer = value
   }
+  get numberOfHits(): number {
+    return this._numberOfHits
+  }
+  set numberOfHits(value: number) {
+    this._numberOfHits = value
+  }
+  get numberOfMisses(): number {
+    return this._numberOfMisses
+  }
+  set numberOfMisses(value: number) {
+    this._numberOfMisses = value
+  }
+  get isWinner(): boolean {
+    return this._isWinner
+  }
+  set isWinner(value: boolean) {
+    this._isWinner = value
+  }
   setPartner(partner: Gamer | null) {
     if (!partner) {
       if (this._partner) {
@@ -109,9 +135,8 @@ export default class Gamer {
   }
   private createField(): Field {
     const field = new Field(10, 10)
-    const arrShipSize = [4, 3, 3, 2, 2, 2, 1, 1, 1, 1]
     const point = new Point()
-    arrShipSize.forEach(shipSize => {
+    Gamer.arrShipSize.forEach(shipSize => {
       const ship = new Ship(shipSize)
       for (const i in field.field) {
         point.setIndex(Number(i), field.n)
@@ -218,5 +243,26 @@ export default class Gamer {
     this.socket.emit("setGamer", { isStep: this.isStep })
     if (this.partner && isSyncWithPartner)
       this.partner.socket.emit("setGamer", { isStep: this.partner.isStep })
+  }
+  syncNumberOfHits(value?: number, isSyncWithPartner: boolean = true) {
+    if (value !== undefined)
+      this.numberOfHits = value
+    this.socket.emit("setGamer", { numberOfHits: this.numberOfHits })
+    if (isSyncWithPartner && this.partner)
+      this.partner.socket.emit("setPartner", { numberOfHits: this.numberOfHits })
+  }
+  syncNumberOfMisses(value?: number, isSyncWithPartner: boolean = true) {
+    if (value !== undefined)
+      this.numberOfMisses = value
+    this.socket.emit("setGamer", { numberOfMisses: this.numberOfMisses })
+    if (isSyncWithPartner && this.partner)
+      this.partner.socket.emit("setPartner", { numberOfMisses: this.numberOfMisses })
+  }
+  syncIsWinner(value?: boolean, isSyncWithPartner: boolean = true) {
+    if (value !== undefined)
+      this.isWinner = value
+    this.socket.emit("setGamer", { isWinner: this.isWinner })
+    if (isSyncWithPartner && this.partner)
+      this.partner.socket.emit("setPartner", { isWinner: this.isWinner })
   }
 }

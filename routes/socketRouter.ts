@@ -101,14 +101,24 @@ const socketRouter = (socket: GamingSocket) => {
                 clearTimeout(gamer.timeoutIdForDeleteGamer)
             }
             gamer.syncStatus(Status.connected)
-            gamer.syncGameStage()
+            gamer.syncGameStage(undefined, false)
             gamer.syncPartner(gamer.partner || null, false)
-            if (gamer.gameStage === GameStage.fillingInField)
-                gamer.syncField(false)
-            if (gamer.gameStage === GameStage.battle) {
-                gamer.syncField(false)
-                socket.emit("setOnPartnerField", gamer.partnerField.field)
-                gamer.syncIsStep()
+            switch (gamer.gameStage) {
+                case GameStage.fillingInField:
+                    gamer.syncField(false)
+                    break;
+                case GameStage.battle:
+                    gamer.syncField(false)
+                    socket.emit("setOnPartnerField", gamer.partnerField.field)
+                    gamer.syncIsStep()
+                    break;
+                case GameStage.endGame:
+                    gamer.syncNumberOfHits(undefined, false)
+                    gamer.syncNumberOfMisses(undefined, false)
+                    gamer.syncIsWinner(gamer.isWinner, false)
+                    break;
+                default:
+                    break;
             }
             return
         }
@@ -217,10 +227,30 @@ const socketRouter = (socket: GamingSocket) => {
         if (!gamer.isStep || !gamer.partner.field.canShoot(point))
             return
         const result = gamer.partner.field.shoot(point)
-        if (!result.isShoot) {
-            gamer.syncIsStep(!gamer.isStep)
-        }
         gamer.partner.syncFieldChanges(result.change)
+        if (!result.isShoot) {
+            gamer.numberOfMisses++
+            gamer.syncIsStep(!gamer.isStep)
+            return
+        }
+        gamer.numberOfHits++
+        if (gamer.numberOfHits === Gamer.arrShipSize.reduce((previousValue, currentValue) => previousValue + currentValue)) {
+            gamer.syncGameStage(GameStage.endGame)
+            gamer.syncNumberOfHits(undefined, false)
+            gamer.syncNumberOfMisses(undefined, false)
+            gamer.syncIsWinner(true, false)
+
+            gamer.partner.syncGameStage(GameStage.endGame)
+            gamer.partner.syncNumberOfHits(undefined, false)
+            gamer.partner.syncNumberOfMisses(undefined, false)
+        }
+    })
+    socket.on("finishGame", () => {
+        gamer.gameStage = GameStage.preparingForGame
+        socket.emit("setGamer", { gameStage: GameStage.preparingForGame })
+        gamer.isWinner = false
+        gamer.numberOfHits = 0
+        gamer.numberOfMisses = 0
     })
 }
 
