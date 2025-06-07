@@ -104,10 +104,10 @@ const socketRouter = (socket: GamingSocket) => {
             gamer.syncGameStage()
             gamer.syncPartner(gamer.partner || null, false)
             if (gamer.gameStage === GameStage.fillingInField)
-                gamer.syncField()
+                gamer.syncField(false)
             if (gamer.gameStage === GameStage.battle) {
-                gamer.syncField()
-                // gamer.partner?.syncField()
+                gamer.syncField(false)
+                socket.emit("setOnPartnerField", gamer.partnerField.field)
                 gamer.syncIsStep()
             }
             return
