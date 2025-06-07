@@ -144,6 +144,62 @@ export class Field {
         ship.turn_clockwise(point)
         return { ...result, ...this.setShip(ship, point, point) }
     }
+    canShoot(point: Point): boolean {
+        return this.get(point) !== Cell.destroyedEmpty && this.get(point) !== Cell.destroyedShip
+    }
+    shoot(point: Point): { change: { [key: number]: Cell }, isShoot: boolean } {
+        if (this.get(point) !== Cell.ship) {
+            this.set(point, Cell.destroyedEmpty)
+            return { change: { [point.getIndex(this.n)]: Cell.destroyedEmpty }, isShoot: false }
+        }
+        this.set(point, Cell.destroyedShip)
+        const change: { [key: number]: Cell } = {
+            [point.getIndex(this.n)]: Cell.destroyedShip
+        }
+        const arrDirect: Point[] = [
+            new Point(1, 1),
+            new Point(-1, 1),
+            new Point(-1, -1),
+            new Point(1, -1)
+        ]
+        arrDirect.forEach(i => {
+            const tempPoint = new Point(point.x + i.x, point.y + i.y)
+            if (this.get(tempPoint) !== undefined) {
+                this.set(tempPoint, Cell.destroyedEmpty)
+                change[tempPoint.getIndex(this.n)] = Cell.destroyedEmpty
+            }
+        })
+
+        const ship = this.getShip(point)
+        const arrShipPoint = ship!.arrPoint
+        let isShipDead = true
+        for (const key in arrShipPoint) {
+            if (this.get(arrShipPoint[key]) === Cell.ship) {
+                isShipDead = false
+                break
+            }
+        }
+        if (!isShipDead) {
+            return { change, isShoot: true }
+        }
+        const arrDirect2 = [
+            new Point(1, 0),
+            new Point(0, 1),
+            new Point(-1, 0),
+            new Point(0, -1)
+        ]
+        arrShipPoint.forEach(i => {
+            arrDirect2.forEach(j => {
+                const tempPoint = new Point(i.x + j.x, i.y + j.y)
+                const cell = this.get(tempPoint)
+                if (cell !== Cell.destroyedShip && cell !== undefined) {
+                    this.set(tempPoint, Cell.destroyedEmpty)
+                    change[tempPoint.getIndex(this.n)] = Cell.destroyedEmpty
+                }
+            })
+        })
+        return { change, isShoot: true }
+    }
     // setField(field: Field) {
     //     this.n = field.n
     //     this.m = field.m

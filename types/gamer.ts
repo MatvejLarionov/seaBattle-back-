@@ -18,6 +18,7 @@ export default class Gamer {
 
   private _field: Field
   private _partnerField: Field
+  private _isStep: boolean
 
   constructor(
     login: string,
@@ -40,6 +41,7 @@ export default class Gamer {
 
     this._field = new Field()
     this._partnerField = new Field()
+    this._isStep = false
   }
   get login(): string {
     return this._login
@@ -102,6 +104,9 @@ export default class Gamer {
   get partnerField(): Field {
     return this._partnerField
   }
+  get isStep(): boolean {
+    return this._isStep
+  }
   private createField(): Field {
     const field = new Field(10, 10)
     const arrShipSize = [4, 3, 3, 2, 2, 2, 1, 1, 1, 1]
@@ -136,7 +141,8 @@ export default class Gamer {
       login: this.login,
       avatar: this.avatar,
       status: this.status,
-      gameStage: this.gameStage
+      gameStage: this.gameStage,
+      isStep: this.isStep
     }
   }
 
@@ -193,11 +199,24 @@ export default class Gamer {
   syncFieldChanges(fieldChanges: { [key: number]: Cell }, isSyncWithPartner: boolean = true) {
     this.socket.emit("setOnField", fieldChanges)
     if (this.partner) {
-      const temp = Object.values(fieldChanges).map((item: Cell) =>
-        item === Cell.ship ? Cell.empty : item)
+      const temp = { ...fieldChanges }
+      for (const i in temp) {
+        if (temp[i] === Cell.ship)
+          temp[i] = Cell.empty
+      }
       this.partner._partnerField = this.partner.partnerField.getNewField(temp)
       if (isSyncWithPartner)
         this.partner.socket.emit("setOnPartnerField", temp)
     }
+  }
+  syncIsStep(value?: boolean, isSyncWithPartner: boolean = true) {
+    if (value !== undefined) {
+      this._isStep = value
+      if (this.partner)
+        this.partner._isStep = !value
+    }
+    this.socket.emit("setGamer", { isStep: this.isStep })
+    if (this.partner && isSyncWithPartner)
+      this.partner.socket.emit("setGamer", { isStep: this.partner.isStep })
   }
 }

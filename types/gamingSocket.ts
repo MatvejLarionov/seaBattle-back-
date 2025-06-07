@@ -15,6 +15,7 @@ type GamingSocket = Socket<
 
     movShip: (oldIndex: number, newIndex: number) => void
     turnClockwiseShip: (index: number) => void
+    shoot: (index: number) => void
   },
   {
     requestToJoin: (partnerLogin: string) => void

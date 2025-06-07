@@ -105,6 +105,11 @@ const socketRouter = (socket: GamingSocket) => {
             gamer.syncPartner(gamer.partner || null, false)
             if (gamer.gameStage === GameStage.fillingInField)
                 gamer.syncField()
+            if (gamer.gameStage === GameStage.battle) {
+                gamer.syncField()
+                // gamer.partner?.syncField()
+                gamer.syncIsStep()
+            }
             return
         }
 
@@ -151,13 +156,19 @@ const socketRouter = (socket: GamingSocket) => {
         gamer.partner.setPartner(null)
     })
     socket.on("setGameReady", (value: boolean) => {
-        if (value && gamer.partner?.status === Status.readyToPlay) {
+        if (gamer.partner?.status !== Status.readyToPlay) {
+            gamer.syncStatus(value ? Status.readyToPlay : Status.connected)
+            return
+        }
+        if (gamer.gameStage !== GameStage.fillingInField) {
             gamer.syncGameStage(GameStage.fillingInField)
             gamer.initFields()
             gamer.syncField()
             gamer.partner.syncStatus(Status.connected)
         } else {
-            gamer.syncStatus(value ? Status.readyToPlay : Status.connected)
+            gamer.syncGameStage(GameStage.battle)
+            gamer.partner.syncStatus(Status.connected)
+            gamer.syncIsStep(Math.round(Math.random() * 100) % 2 === 0)
         }
     })
     socket.on("deletePartner", () => {
@@ -193,6 +204,23 @@ const socketRouter = (socket: GamingSocket) => {
             if (change)
                 gamer.syncFieldChanges(change, false)
         }
+    })
+    socket.on("shoot", (index) => {
+        if (!gamer)
+            return
+        if (!gamer.partner)
+            return
+        if (gamer.gameStage !== GameStage.battle)
+            return
+        const point = new Point()
+        point.setIndex(index, gamer.field.n)
+        if (!gamer.isStep || !gamer.partner.field.canShoot(point))
+            return
+        const result = gamer.partner.field.shoot(point)
+        if (!result.isShoot) {
+            gamer.syncIsStep(!gamer.isStep)
+        }
+        gamer.partner.syncFieldChanges(result.change)
     })
 }
 
