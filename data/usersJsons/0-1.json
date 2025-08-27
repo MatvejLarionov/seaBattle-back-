@@ -1,0 +1,32 @@
+[
+  {
+    "login": "asa",
+    "password": "1234",
+    "avatar": "/usersAvatars/defaultAvatar.jpg",
+    "id": 0
+  },
+  {
+    "login": "GYSKA2",
+    "password": "123",
+    "avatar": "/usersAvatars/defaultAvatar.jpg",
+    "id": 1
+  },
+  {
+    "login": "GYSKA",
+    "password": "1234",
+    "avatar": "/usersAvatars/defaultAvatar.jpg",
+    "id": 2
+  },
+  {
+    "login": "Титка",
+    "password": "231313",
+    "avatar": "/usersAvatars/defaultAvatar.jpg",
+    "id": 3
+  },
+  {
+    "login": "Матвей",
+    "password": "123",
+    "avatar": "/usersAvatars/defaultAvatar.jpg",
+    "id": 4
+  }
+]
